@@ -91,8 +91,17 @@ class PostLikeCreateAPI(generics.CreateAPIView, mixins.DestroyModelMixin):
             raise exceptions.ValidationError(_('You havent liked this post yet').capitalize())
 
 
-class UserCrateAPI(generics.CreateAPIView):
+class UserCrateAPI(generics.CreateAPIView, mixins.DestroyModelMixin):
     queryset = get_user_model().objects.all()
     serializer_class = serializers.UserSerializer
     permission_classes = [permissions.AllowAny]
 
+    def delete(self, request, *args, **kwargs):
+        if self.request.user.is_authenticated:
+            user = get_user_model().objects.filter(id=self.request.user)
+            if request.exists():
+                user.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        else:
+            raise exceptions.ValidationError(_('unauthenticated user cannot be deleted').capitalize())
